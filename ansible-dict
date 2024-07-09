@@ -1,0 +1,42 @@
+- name: "Performance Metrics Tasks"
+  hosts: localhost
+  gather_facts: no
+  vars:
+    management_host: "your_management_host"
+    array_name: "your_array_name"
+    stored_credential:
+      username: "your_username"
+      password: "your_password"
+    directors_ports:
+      - directorId: "FA-1D"
+        portId: "0"
+      - directorId: "FA-2D"
+        portId: "1"
+  tasks:
+    - name: Get performance metrics for each director and port
+      uri:
+        url: "https://{{ management_host }}:8443/univmax/restapi/performance/FEPort/metrics"
+        user: "{{ stored_credential.username }}"
+        password: "{{ stored_credential.password }}"
+        force_basic_auth: yes
+        status_code: 200
+        method: POST
+        validate_certs: false
+        body_format: json
+        body: {
+          "symmetrixId": "{{ array_name }}",
+          "directorId": "{{ item.directorId }}",
+          "startDate": ,
+          "endDate": ,
+          "dataFormat": "Maximum",
+          "metrics": ["PercentBusy", "AvgIOSize", "ResponseTime"],
+          "portId": "{{ item.portId }}"
+        }
+        headers:
+          Content-Type: "application/json"
+      loop: "{{ directors_ports }}"
+      register: result
+
+    - name: Debug results
+      debug:
+        var: result.results
