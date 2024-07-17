@@ -1,0 +1,42 @@
+- name: "Performance Metrics Tasks"
+  hosts: localhost
+  gather_facts: no
+  vars:
+    management_host: "{{ management_host }}"
+    array_name: "{{ array_name }}"
+    stored_credential: 
+      username: "{{ credential_username }}"
+      password: "{{ credential_password }}"
+    directors_ports: "{{ directors_ports }}"
+  tasks:
+    - name: Get performance metrics for each director and port
+      uri:
+        url: "https://{{ management_host }}:8443/univmax/restapi/performance/FEPort/metrics"
+        user: "{{ stored_credential.username }}"
+        password: "{{ stored_credential.password }}"
+        force_basic_auth: yes
+        status_code: 200
+        method: POST
+        validate_certs: false
+        body_format: json
+        body: {
+          "symmetrixId": "{{ array_name }}",
+          "directorId": "{{ item.directorId }}",
+          "startDate": 
+          "endDate": ,
+          "dataFormat": "Maximum",
+          "metrics": ["PercentBusy", "AvgIOSize", "ResponseTime"],
+          "portId": "{{ item.portId }}"
+        }
+        headers:
+          Content-Type: "application/json"
+      with_items: "{{ directors_ports }}"
+      register: result
+
+    - name: Extract relevant fields
+      set_fact:
+        formatted_results: "{{ result.results | map(attribute='json') | map(attribute='result') | map('extract', ['directorId', 'symmetrixId', 'portId', 'PercentBusy', 'AvgIOSize', 'ResponseTime']) | list }}"
+
+    - name: Print formatted results
+      debug:
+        var: formatted_results
