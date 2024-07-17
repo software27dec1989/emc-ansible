@@ -1,0 +1,6 @@
+ - name: Extract desired metrics and format output
+      debug:
+        msg: >-
+          "Director ID: {{ item.directorId }}, Symmetrix ID: {{ array_name }}, Port ID: {{ item.portId }}
+           PercentBusy: {{ item.data['PercentBusy'] }}, AvgIO Size: {{ item.data['AvgIOSize'] }}, Response Time: {{ item.data['ResponseTime'] }}"
+      with_items: "{{ result.results }}"
